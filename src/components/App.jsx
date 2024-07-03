@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import Notiflix from 'notiflix';
 import ImageGallery from './ImageGallery/ImageGallery';
@@ -8,82 +8,78 @@ import Modal from './Modal/Modal';
 import css from './App.module.css';
 import { fetchFunc } from '../services/api';
 
-class App extends Component {
-  state = {
-    search: '',
-    page: 1,
-    dataStore: [],
-    totalPages: 1,
-    loading: false,
-    isModalOpen: false,
-    currentImg: {},
-  };
+const App = () => {
 
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.search !== this.state.search ||
-      prevState.page !== this.state.page
-    ) {
-      this.addImages();
-    }
-  }
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [dataStore, setDataStore] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentImg, setCurrentImg] = useState({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  addImages = async () => {
-    const { search, page } = this.state;
-    this.setState({ loading: true });
+  const addImages = async () => {
+    setLoading(true);
     const data = await fetchFunc(search, page);
     if (data && data.hits.length > 0) {
-      this.setState(prevState => ({
-        dataStore: [...prevState.dataStore, ...data.hits],
-        loading: false,
-        totalPages: Math.ceil(data.totalHits / 12),
-      }));
+      setDataStore(prevState => ([
+        ...prevState, ...data.hits,
+      ]));
+      setLoading(false);
+      setTotalPages(Math.ceil(data.totalHits / 12));
     } else {
-      this.setState({ loading: false });
+      setLoading(false);
     }
   };
 
-  handleSubmit = (value) => {
+  useEffect(() => {
+    if (isInitialized) {
+      addImages();
+    } else {
+      setIsInitialized(true);
+    }
+  }, [search, page]);
+
+  const handleSubmit = (value) => {
     if (value.trim() === '') {
       Notiflix.Notify.warning('Please enter a search query.');
       return;
     }
-    this.setState({ search: value, page: 1, dataStore: [] });
+    setSearch(value);
+    setPage(1);
+    setDataStore([]);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const loadMore = () => {
+    setPage(page + 1);
   };
 
-  openModal = evt => {
+  const openModal = evt => {
     const { id, alt } = evt.target;
-    this.setState({ isModalOpen: true, currentImg: { src: id, alt: alt } });
+    setIsModalOpen(true);
+    setCurrentImg({ src: id, alt: alt });
   };
 
-  closeModal = () => {
-    this.setState({ isModalOpen: false });
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
-  render() {
-    const { dataStore, loading, isModalOpen, currentImg, totalPages, page } = this.state;
-    return (
-      <div className={css.app}>
-        <Searchbar  onSubmit={this.handleSubmit} />
-        {dataStore.length > 0 && (
-          <ImageGallery data={dataStore} openModal={this.openModal} />
-        )}
-        {loading && <Loader />}
-        {totalPages !== page && !loading && (
-          <Button onClick={this.loadMore} />
-        )}
-        {isModalOpen && (
-          <Modal onClose={this.closeModal} data={currentImg} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.app}>
+      <Searchbar onSubmit={handleSubmit} />
+      {dataStore.length > 0 && (
+        <ImageGallery data={dataStore} openModal={openModal} />
+      )}
+      {loading && <Loader />}
+      {totalPages !== page && !loading && (
+        <Button onClick={loadMore} />
+      )}
+      {isModalOpen && (
+        <Modal onClose={closeModal} data={currentImg} />
+      )}
+    </div>
+  );
+};
 
 export default App;
