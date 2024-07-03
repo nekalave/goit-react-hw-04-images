@@ -39,7 +39,7 @@ const App = () => {
     } else {
       setIsInitialized(true);
     }
-  }, [search, page]);
+  }, [search, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = (value) => {
     if (value.trim() === '') {

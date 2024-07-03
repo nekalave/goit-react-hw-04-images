@@ -20,7 +20,7 @@ const Modal = ({ onClose, data }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={css.overlay} onClick={handleOverlayClick}>
